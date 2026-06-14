@@ -1,18 +1,32 @@
 {
-  "name": "octopus",
+  "name": "octopus-agent",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "🐙 Terminal AI agent — speak naturally, execute instantly",
+  "type": "module",
+  "main": "dist/cli/index.js",
+  "bin": {
+    "octopus": "dist/cli/index.js",
+    "octopus-setup": "dist/cli/setup.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx src/cli/index.ts",
     "build": "tsc",
-    "start": "node dist/cli/index.js"
+    "start": "node dist/cli/index.js",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
+  "keywords": [
+    "ai",
+    "agent",
+    "terminal",
+    "cli",
+    "llm",
+    "groq",
+    "llama",
+    "automation",
+    "natural-language"
+  ],
+  "author": "Pabitra",
+  "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^12.10.1",
     "chalk": "^5.6.2",
@@ -27,5 +41,8 @@
     "@types/nodemailer": "^8.0.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

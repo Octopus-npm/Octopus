@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import readline from "readline";
 import chalk from "chalk";
 import { parseIntent } from "../core/intentParser.js";
@@ -21,7 +22,6 @@ import {
   getRecentMessages,
   getSessionStats,
 } from "../memory/store.js";
-
 
 // ── Confirmation gate
 async function confirm(rl: readline.Interface): Promise<boolean> {
@@ -86,6 +86,54 @@ async function main(): Promise<void> {
       ) {
         clearMemory();
         showSuccess("Memory cleared. Starting fresh.");
+        ask();
+        return;
+      }
+
+      // Help command
+      if (
+        ["help", "?", "commands", "what can you do"].includes(
+          trimmed.toLowerCase(),
+        )
+      ) {
+        console.log();
+        console.log(chalk.cyan("  🐙 What Octopus can do:"));
+        console.log();
+        console.log(
+          chalk.white("  ⚡ Shell    ") +
+            chalk.gray("Run any terminal command in plain English"),
+        );
+        console.log(chalk.gray('             "show running processes"'));
+        console.log(chalk.gray('             "what is my IP address"'));
+        console.log();
+        console.log(
+          chalk.white("  📁 File    ") +
+            chalk.gray("Read, write, list, search files"),
+        );
+        console.log(chalk.gray('             "read ~/notes.txt"'));
+        console.log(
+          chalk.gray(
+            '             "search for files named report in my documents"',
+          ),
+        );
+        console.log();
+        console.log(
+          chalk.white("  ✉️  Email   ") + chalk.gray("Send emails via Gmail"),
+        );
+        console.log(
+          chalk.gray(
+            '             "email john@acme.com that the meeting is at 3pm"',
+          ),
+        );
+        console.log();
+        console.log(
+          chalk.white("  🧠 Memory  ") + chalk.gray("Special commands"),
+        );
+        console.log(
+          chalk.gray('             "clear memory" — wipe conversation history'),
+        );
+        console.log(chalk.gray('             "exit" — quit Octopus'));
+        console.log();
         ask();
         return;
       }
