@@ -1,4 +1,5 @@
 import readline from "readline";
+import chalk from "chalk";
 import { parseIntent } from "../core/intentParser.js";
 import {
   showBanner,
@@ -14,19 +15,15 @@ import {
   stopSpinner,
   showConfirmPrompt,
 } from "./display.js";
+import {
+  addMessage,
+  clearMemory,
+  getRecentMessages,
+  getSessionStats,
+} from "../memory/store.js";
 
-// ── Conversation memory (last 10 exchanges) ───────────────────────────────────
 
-type Message = { role: "user" | "assistant"; content: string };
-const memory: Message[] = [];
-
-function addToMemory(role: "user" | "assistant", content: string): void {
-  memory.push({ role, content });
-  if (memory.length > 10) memory.shift();
-}
-
-// ── Confirmation gate 
-
+// ── Confirmation gate
 async function confirm(rl: readline.Interface): Promise<boolean> {
   return new Promise((resolve) => {
     showConfirmPrompt();
@@ -36,10 +33,19 @@ async function confirm(rl: readline.Interface): Promise<boolean> {
   });
 }
 
-// ── Main loop 
+// ── Main loop
 
 async function main(): Promise<void> {
   showBanner();
+  const stats = getSessionStats();
+  if (stats.totalMessages > 0) {
+    console.log(
+      chalk.gray(
+        `  Resuming session — ${stats.totalMessages} messages in memory`,
+      ),
+    );
+    console.log();
+  }
 
   const rl = readline.createInterface({
     input: process.stdin,
@@ -72,13 +78,27 @@ async function main(): Promise<void> {
         process.exit(0);
       }
 
+      // Clear memory
+      if (
+        ["clear memory", "forget everything", "reset memory"].includes(
+          trimmed.toLowerCase(),
+        )
+      ) {
+        clearMemory();
+        showSuccess("Memory cleared. Starting fresh.");
+        ask();
+        return;
+      }
+
       // Parse intent via Groq
       startSpinner("Thinking...");
       let intent;
       try {
-        intent = await parseIntent(trimmed, memory);
+        const recentMessages = getRecentMessages(10);
+        intent = await parseIntent(trimmed, recentMessages);
       } catch (err) {
         stopSpinner();
+        console.error(err);
         showError(
           "Failed to reach Groq API. Check your GROQ_API_KEY and internet connection.",
         );
@@ -95,8 +115,8 @@ async function main(): Promise<void> {
         const reason =
           intent.params["reason"] ?? "Could not understand command.";
         showUnknown(reason);
-        addToMemory("user", trimmed);
-        addToMemory("assistant", `Could not execute: ${reason}`);
+        addMessage("user", trimmed, "unknown");
+        addMessage("assistant", `Could not execute: ${reason}`, "unknown");
         ask();
         return;
       }
@@ -123,8 +143,8 @@ async function main(): Promise<void> {
           showError(result.message);
         }
 
-        addToMemory("user", trimmed);
-        addToMemory("assistant", result.message);
+        addMessage("user", trimmed, intent.action);
+        addMessage("assistant", result.message, intent.action);
       } catch (err) {
         showError("Router not ready yet — build Steps 7-9 first.");
       }

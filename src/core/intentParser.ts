@@ -83,11 +83,17 @@ export interface ParsedIntent {
 
 export async function parseIntent(
   userInput: string,
-  context: { role: "user" | "assistant"; content: string }[],
+  context: { role: "user" | "assistant"; content: string; action?: string }[]
 ): Promise<ParsedIntent> {
+  
+  // Strip any extra fields — Groq only accepts role and content
+  const cleanContext: Groq.Chat.ChatCompletionMessageParam[] = context.map(
+    ({ role, content }) => ({ role, content })
+  );
+
   const messages: Groq.Chat.ChatCompletionMessageParam[] = [
     { role: "system", content: SYSTEM_PROMPT },
-    ...context,
+    ...cleanContext,
     { role: "user", content: userInput },
   ];
 
