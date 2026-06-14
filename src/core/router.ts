@@ -1,6 +1,8 @@
 import { ParsedIntent } from "./intentParser.js";
 import { executeShell } from "../tentacles/shell.js";
 import { executeFile } from "../tentacles/file.js";
+import { executeEmail } from "../tentacles/email.js"; 
+
 
 // ── Unified result type 
 export interface ExecuteResult {
@@ -29,12 +31,7 @@ export async function execute(intent: ParsedIntent): Promise<ExecuteResult> {
     }
 
     case "email": {
-      // Coming in — email tentacle
-      return {
-        success: false,
-        output: "",
-        message: "Email tentacle not wired yet — coming in",
-      };
+      return executeEmail(intent.params); 
     }
 
     case "unknown":
