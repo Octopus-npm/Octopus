@@ -1,6 +1,6 @@
 <div align="center">
 
-<video src="assets/Octopus_logo.mp4" autoplay loop muted playsinline width="120"></video>
+<img src="assets/Octopus_logo.gif" width="120" alt="Octopus logo" />
 
 # Octopus v1.0.0
 
