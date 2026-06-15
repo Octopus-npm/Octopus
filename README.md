@@ -2,7 +2,7 @@
 
 <img src="assets/Octopus_logo.gif" width="120" alt="Octopus logo" />
 
-# Octopus v1.0.0
+# Octopus
 
 **Terminal AI Agent — speak naturally, execute instantly.**
 
@@ -16,7 +16,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Gmail](https://img.shields.io/badge/Gmail-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](https://mail.google.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
-[![npm](https://img.shields.io/badge/npm-coming_soon-CB3837?style=for-the-badge&logo=npm&logoColor=white)](https://npmjs.com)
+[![npm](https://img.shields.io/npm/v/octopus-agent?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/octopus-agent)
 
 </div>
 
@@ -51,7 +51,19 @@ Octopus is a terminal-based autonomous AI agent powered by **Groq + Llama 3.3 70
 
 ## Quick start
 
-### 1. Clone and install
+### Option 1 — Run instantly (no install)
+```bash
+npx octopus-agent
+```
+
+### Option 2 — Install globally
+```bash
+npm install -g octopus-agent
+octopus
+```
+
+### Option 3 — install locally and run
+### 1. Clone and install locally and run
 
 ```bash
 git clone https://github.com/Codewithpabitra/octopus.git
