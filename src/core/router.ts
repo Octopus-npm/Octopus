@@ -2,6 +2,7 @@ import { ParsedIntent } from "./intentParser.js";
 import { executeShell } from "../tentacles/shell.js";
 import { executeFile } from "../tentacles/file.js";
 import { executeEmail } from "../tentacles/email.js";
+import { executeWeb } from "../tentacles/web.js";
 
 // ── Unified result type
 export interface ExecuteResult {
@@ -43,6 +44,17 @@ export async function execute(
     case "email": {
       onProgress("Sending email...");
       return executeEmail(intent.params);
+    }
+
+    case "web": {
+      const operation = intent.params["operation"];
+
+      if (operation === "search") onProgress("🌐  Launching search...");
+      else if (operation === "scrape") onProgress("🌐  Opening page...");
+      else if (operation === "screenshot") onProgress("🌐  Loading page...");
+      else if (operation === "summarize") onProgress("🌐  Fetching page...");
+      else onProgress("🌐  Working...");
+      return executeWeb(intent.params, onProgress);
     }
 
     case "unknown":

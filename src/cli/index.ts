@@ -25,6 +25,7 @@ import {
   getRecentMessages,
   getSessionStats,
 } from "../memory/store.js";
+import { closeBrowser } from "../tentacles/web.js";
 
 // ── Confirmation gate
 async function confirm(rl: readline.Interface): Promise<boolean> {
@@ -36,8 +37,13 @@ async function confirm(rl: readline.Interface): Promise<boolean> {
   });
 }
 
-// ── Main loop
+// Extract URL directly from raw user input — for better output and avoid failures
+function extractUrlFromInput(input: string): string | null {
+  const match = input.match(/https?:\/\/[^\s]+/);
+  return match ? match[0] : null;
+}
 
+// ── Main loop
 async function main(): Promise<void> {
   showBanner();
   const stats = getSessionStats();
@@ -57,7 +63,8 @@ async function main(): Promise<void> {
   });
 
   // Graceful exit on Ctrl+C
-  rl.on("SIGINT", () => {
+  rl.on("SIGINT", async () => {
+    await closeBrowser();
     showGoodbye();
     process.exit(0);
   });
@@ -76,6 +83,7 @@ async function main(): Promise<void> {
 
       // Exit commands
       if (["exit", "quit", "bye"].includes(trimmed.toLowerCase())) {
+        await closeBrowser();
         showGoodbye();
         rl.close();
         process.exit(0);
@@ -130,6 +138,22 @@ async function main(): Promise<void> {
         );
         console.log();
         console.log(
+          chalk.white("  🌐 Web     ") +
+            chalk.gray("Scrape, screenshot, summarize, search the web"),
+        );
+        console.log(chalk.gray('             "get headlines from bbc.com"'));
+        console.log(
+          chalk.gray('             "search for nodejs jobs in Kolkata"'),
+        );
+        console.log(
+          chalk.gray('             "summarize https://dev.to/some-article"'),
+        );
+        console.log(
+          chalk.gray('             "screenshot github.com/Codewithpabitra"'),
+        );
+        console.log();
+
+        console.log(
           chalk.white("  🧠 Memory  ") + chalk.gray("Special commands"),
         );
         console.log(
@@ -161,6 +185,14 @@ async function main(): Promise<void> {
       // Show what Octopus understood
       showIntent(intent.summary, intent.action);
 
+      //URL override — if user typed a URL, always use it regardless of what Groq parsed
+      if (intent.action === "web" && intent.params["url"]) {
+        const rawUrl = extractUrlFromInput(trimmed);
+        if (rawUrl) {
+          intent.params["url"] = rawUrl;
+        }
+      }
+
       // Handle unknown
       if (intent.action === "unknown") {
         const reason =
@@ -187,6 +219,14 @@ async function main(): Promise<void> {
       try {
         const { execute } = await import("../core/router.js");
         // startSpinner("Starting...");
+        const executionLabels: Record<string, string> = {
+          shell: "Running command...",
+          file: "Processing file...",
+          email: "Sending email...",
+          web: "Launching browser...",
+        };
+        startSpinner(executionLabels[intent.action] ?? "Working...");
+
         const result = await execute(intent, (text) => {
           updateSpinner(text);
         });

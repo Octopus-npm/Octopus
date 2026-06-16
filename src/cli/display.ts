@@ -44,6 +44,7 @@ export function showBanner(): void {
       chalk.cyan("⬡ shell  ") +
       chalk.cyan("⬡ email  ") +
       chalk.cyan("⬡ file"),
+      chalk.cyan("⬡ web")
   );
 
   console.log(
@@ -131,6 +132,7 @@ export function showIntent(summary: string, action: string): void {
     shell: "⚡",
     email: "✉️ ",
     file: "📁",
+    web: "🌐",
     unknown: "❓",
   };
   const icon = icons[action] ?? "•";
