@@ -86,14 +86,29 @@ export function showBanner(): void {
 
 // ── Spinner
 
+type SpinnerStyle =
+  | "dots"
+  | "dots2"
+  | "dots8"
+  | "line"
+  | "earth"
+  | "moon"
+  | "arrow";
+
 let spinner: Ora | null = null;
 
-export function startSpinner(text: string): void {
+export function startSpinner(text: string, style: SpinnerStyle = "dots"): void {
   spinner = ora({
     text: chalk.gray(text),
-    spinner: "dots",
+    spinner: style,
     color: "cyan",
   }).start();
+}
+
+export function updateSpinner(text: string): void {
+  if (spinner) {
+    spinner.text = chalk.gray(text);
+  }
 }
 
 export function stopSpinner(): void {
@@ -174,5 +189,27 @@ export function showCancelled(): void {
 export function showGoodbye(): void {
   console.log();
   console.log(chalk.cyan("  🐙  Goodbye. Tentacles retracted."));
+  console.log();
+}
+
+// Search In Web
+export function showWebResult(url: string, content: string): void {
+  console.log();
+  console.log(chalk.gray("  source  ") + chalk.cyan(url));
+  console.log();
+  const lines = content.trimEnd().split("\n");
+  lines.forEach((line) => {
+    console.log(chalk.gray("  │  ") + chalk.white(line));
+  });
+  console.log();
+}
+
+export function showScreenshotSaved(filePath: string): void {
+  console.log();
+  console.log(
+    chalk.green("  ✔  ") +
+      chalk.white("Screenshot saved → ") +
+      chalk.cyan(filePath),
+  );
   console.log();
 }
