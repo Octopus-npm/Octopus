@@ -18,6 +18,16 @@ import {
   showConfirmPrompt,
   showWebResult,
   showScreenshotSaved,
+  showGitStatus,
+  showGitLog,
+  showGitDiff,
+  showCommitMessage,
+  showGitBranches,
+  showSafetyCheck,
+  showStandup,
+  showPRDescription,
+  showStashes,
+  showStaleBranches,
 } from "./display.js";
 import {
   addMessage,
@@ -161,6 +171,21 @@ async function main(): Promise<void> {
         );
         console.log(chalk.gray('             "exit" — quit Octopus'));
         console.log();
+
+        console.log(
+          chalk.white("  🐼 Git     ") +
+            chalk.gray("AI-powered git operations"),
+        );
+        console.log(
+          chalk.gray('             "commit my changes with a good message"'),
+        );
+        console.log(chalk.gray('             "show git status"'));
+        console.log(chalk.gray('             "generate my standup"'));
+        console.log(chalk.gray('             "write a PR description"'));
+        console.log(chalk.gray('             "is it safe to push"'));
+        console.log(chalk.gray('             "show stale branches"'));
+        console.log(chalk.gray('             "what\'s in my stashes"'));
+        console.log();
         ask();
         return;
       }
@@ -220,10 +245,11 @@ async function main(): Promise<void> {
         const { execute } = await import("../core/router.js");
         // startSpinner("Starting...");
         const executionLabels: Record<string, string> = {
-          shell: "Running command...",
-          file: "Processing file...",
-          email: "Sending email...",
-          web: "Launching browser...",
+          shell: "⚡ Running command...",
+          file: "📁 Processing file...",
+          email: "✉️  Connecting to Gmail...",
+          web: "🌐 Launching browser...",
+          git: "🐼  Initializing git...",
         };
         startSpinner(executionLabels[intent.action] ?? "Working...");
 
@@ -233,8 +259,55 @@ async function main(): Promise<void> {
         stopSpinner();
 
         if (result.success) {
-          if (result.output) showOutput(result.output);
-          showSuccess(result.message);
+          const data = result.data as
+            | {
+                type?: string;
+                commits?: {
+                  hash: string;
+                  date: string;
+                  message: string;
+                  author: string;
+                }[];
+                branches?:
+                  | string[]
+                  | { name: string; lastCommit: string; daysAgo: number }[];
+                current?: string;
+                issues?: string[];
+                stashes?: { index: number; message: string; summary: string }[];
+              }
+            | undefined;
+
+          if (data?.type === "status") {
+            showGitStatus(result.output);
+          } else if (data?.type === "log") {
+            showGitLog(data.commits ?? []);
+          } else if (data?.type === "diff") {
+            showGitDiff(result.output);
+          } else if (data?.type === "commit") {
+            showCommitMessage(result.output);
+            showSuccess(result.message);
+          } else if (data?.type === "branches") {
+            showGitBranches(data.branches as string[], data.current ?? "");
+          } else if (data?.type === "safety") {
+            showSafetyCheck(data.issues ?? []);
+          } else if (data?.type === "standup") {
+            showStandup(result.output);
+          } else if (data?.type === "pr") {
+            showPRDescription(result.output);
+          } else if (data?.type === "stashes") {
+            showStashes(data.stashes ?? []);
+          } else if (data?.type === "stale") {
+            showStaleBranches(
+              data.branches as {
+                name: string;
+                lastCommit: string;
+                daysAgo: number;
+              }[],
+            );
+          } else {
+            if (result.output) showOutput(result.output);
+            showSuccess(result.message);
+          }
         } else {
           showError(result.message);
         }

@@ -179,7 +179,7 @@ async function gitLog(
   }
 }
 
-// ── BRANCH 
+// ── BRANCH
 async function gitBranch(
   operation: string,
   branchName: string,
@@ -296,7 +296,7 @@ async function gitPull(onProgress: GitProgressCallback): Promise<GitResult> {
   }
 }
 
-// ── DIFF 
+// ── DIFF
 async function gitDiff(onProgress: GitProgressCallback): Promise<GitResult> {
   onProgress("⎇  Reading changes...");
   const git = getGit();
@@ -402,7 +402,7 @@ async function safetyCheck(
   }
 }
 
-// ── STANDUP GENERATOR 
+// ── STANDUP GENERATOR
 async function gitStandup(onProgress: GitProgressCallback): Promise<GitResult> {
   onProgress("⎇  Reading yesterday's commits...");
   const git = getGit();
@@ -605,6 +605,34 @@ async function gitStaleBranches(
   }
 }
 
+// fetch remote
+async function gitRemote(onProgress: GitProgressCallback): Promise<GitResult> {
+  onProgress("🐼  Fetching remote info...");
+  const git = getGit();
+  try {
+    const remotes = await git.getRemotes(true);
+    if (remotes.length === 0) {
+      return { success: false, output: "", message: "No remotes configured." };
+    }
+    const lines = remotes.map(
+      (r) =>
+        `${r.name}  →  fetch: ${r.refs.fetch ?? "—"}  push: ${r.refs.push ?? "—"}`,
+    );
+    return {
+      success: true,
+      output: lines.join("\n"),
+      message: `Found ${remotes.length} remote(s)`,
+    };
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    return {
+      success: false,
+      output: "",
+      message: error.message ?? "remote fetch failed",
+    };
+  }
+}
+
 // ── MAIN EXECUTOR
 export async function executeGit(
   params: Record<string, string>,
@@ -637,6 +665,8 @@ export async function executeGit(
       return gitPRDescription(onProgress);
     case "stash":
       return gitStashList(onProgress);
+    case "remote":
+      return gitRemote(onProgress);
     case "stale":
       return gitStaleBranches(parseInt(days ?? "30"), onProgress);
     default:

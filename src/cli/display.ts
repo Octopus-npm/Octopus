@@ -45,6 +45,7 @@ export function showBanner(): void {
       chalk.cyan("⬡ email  ") +
       chalk.cyan("⬡ file"),
     chalk.cyan("⬡ web"),
+    chalk.cyan("⬡ git"),
   );
 
   console.log(
@@ -133,6 +134,7 @@ export function showIntent(summary: string, action: string): void {
     email: "✉️ ",
     file: "📁",
     web: "🌐",
+    git: "🐼",
     unknown: "❓",
   };
   const icon = icons[action] ?? "•";
@@ -261,23 +263,64 @@ export function showGitLog(
 
 export function showGitDiff(output: string): void {
   console.log();
-  console.log(chalk.cyan("  ── git diff ────────────────────────────────"));
-  const lines = output.trimEnd().split("\n");
-  lines.slice(0, 60).forEach((line) => {
-    if (line.startsWith("+") && !line.startsWith("+++")) {
-      console.log(chalk.green("  " + line));
-    } else if (line.startsWith("-") && !line.startsWith("---")) {
-      console.log(chalk.red("  " + line));
-    } else if (line.startsWith("@@")) {
-      console.log(chalk.cyan("  " + line));
-    } else {
-      console.log(chalk.gray("  " + line));
-    }
+
+  // Split into per-file sections
+  const fileSections = output.split(/^diff --git /m).filter(Boolean);
+
+  fileSections.forEach((section) => {
+    const lines = section.split("\n");
+
+    // Extract file name from first line: "a/src/file.ts b/src/file.ts"
+    const fileHeader = lines[0] ?? "";
+    const fileMatch = fileHeader.match(/b\/(.+)$/);
+    const fileName = fileMatch ? fileMatch[1] : fileHeader;
+
+    console.log(chalk.cyan("  ┌─ ") + chalk.white.bold(fileName));
+    console.log(chalk.gray("  │"));
+
+    let inHunk = false;
+
+    lines.slice(1).forEach((line) => {
+      // Skip git metadata lines
+      if (
+        line.startsWith("index ") ||
+        line.startsWith("--- ") ||
+        line.startsWith("+++ ") ||
+        line.startsWith("diff --git") ||
+        line.startsWith("new file") ||
+        line.startsWith("deleted file")
+      )
+        return;
+
+      // Hunk header @@ -x,y +a,b @@
+      if (line.startsWith("@@")) {
+        inHunk = true;
+        const hunkMatch = line.match(/@@ .+ @@ ?(.*)?/);
+        const context = hunkMatch?.[1] ?? "";
+        console.log(
+          chalk.gray("  ├─ ") +
+            chalk.cyan(
+              line.split("@@")[1]?.trim().split("@@")[0]?.trim() ?? "",
+            ) +
+            (context ? chalk.gray("  " + context) : ""),
+        );
+        return;
+      }
+
+      if (!inHunk) return;
+
+      if (line.startsWith("+")) {
+        console.log(chalk.green("  │ + ") + chalk.green(line.slice(1)));
+      } else if (line.startsWith("-")) {
+        console.log(chalk.red("  │ - ") + chalk.red(line.slice(1)));
+      } else if (line.trim()) {
+        console.log(chalk.gray("  │   ") + chalk.gray(line));
+      }
+    });
+
+    console.log(chalk.gray("  └" + "─".repeat(44)));
+    console.log();
   });
-  if (output.split("\n").length > 60) {
-    console.log(chalk.gray("  ... (truncated for readability)"));
-  }
-  console.log();
 }
 
 export function showCommitMessage(message: string): void {

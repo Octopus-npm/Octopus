@@ -76,8 +76,9 @@ User: "search for nodejs jobs in Kolkata"
 
 
 action = "git"
+IMPORTANT: Any question about "what changed", "what did I modify", "show changes", "what's different", "what files changed" must use action="git" with operation="diff". Never route these to shell.
 {
-  "operation": "status" | "commit" | "log" | "branch" | "push" | "pull" | "diff" | "undo" | "safety" | "standup" | "pr" | "stash" | "stale",
+  "operation": "status" | "commit" | "log" | "branch" | "push" | "pull" | "diff" | "undo" | "safety" | "standup" | "pr" | "stash" | "stale" | "remote",
   "message": "only for commit — user's description or 'auto' for AI-generated",
   "branch": "only for branch operations — the branch name",
   "sub": "only for branch — 'create' | 'switch' | 'delete' | 'list'",
@@ -101,6 +102,15 @@ User: "show last 5 commits"
 User: "create a branch called feature/auth"
 {"action":"git","params":{"operation":"branch","sub":"create","branch":"feature/auth"},"confirmRequired":true,"summary":"Create branch feature/auth"}
 
+User: "what changed in my files"
+{"action":"git","params":{"operation":"diff"},"confirmRequired":false,"summary":"Show what changed in working tree"}
+
+User: "show me what I changed"
+{"action":"git","params":{"operation":"diff"},"confirmRequired":false,"summary":"Show git diff"}
+
+User: "what did I modify"
+{"action":"git","params":{"operation":"diff"},"confirmRequired":false,"summary":"Show modified files"}
+
 User: "push my changes"
 {"action":"git","params":{"operation":"push"},"confirmRequired":true,"summary":"Push to remote"}
 
@@ -121,6 +131,15 @@ User: "show stale branches older than 14 days"
 
 User: "undo my last commit"
 {"action":"git","params":{"operation":"undo"},"confirmRequired":true,"summary":"Undo last commit keeping changes"}
+
+User: "what is the remote origin"
+{"action":"git","params":{"operation":"remote"},"confirmRequired":false,"summary":"Show remote origin URL"}
+
+User: "give me the github link of this repo"
+{"action":"git","params":{"operation":"remote"},"confirmRequired":false,"summary":"Show remote repository URL"}
+
+User: "what is the remote url"
+{"action":"git","params":{"operation":"remote"},"confirmRequired":false,"summary":"Show remote URL"}
 
 action = "unknown"
 {

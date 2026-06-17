@@ -3,12 +3,14 @@ import { executeShell } from "../tentacles/shell.js";
 import { executeFile } from "../tentacles/file.js";
 import { executeEmail } from "../tentacles/email.js";
 import { executeWeb } from "../tentacles/web.js";
+import { executeGit } from "../tentacles/git.js";
 
 // ── Unified result type
 export interface ExecuteResult {
   success: boolean;
   output: string;
   message: string;
+  data?: unknown;
 }
 
 export type ProgressCallback = (text: string) => void;
@@ -55,6 +57,11 @@ export async function execute(
       else if (operation === "summarize") onProgress("🌐  Fetching page...");
       else onProgress("🌐  Working...");
       return executeWeb(intent.params, onProgress);
+    }
+
+    case "git": {
+      onProgress("⎇  Initializing git...");
+      return executeGit(intent.params, onProgress);
     }
 
     case "unknown":
