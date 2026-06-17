@@ -74,6 +74,54 @@ User: "take a screenshot of github.com/Codewithpabitra"
 User: "search for nodejs jobs in Kolkata"
 {"action":"web","params":{"operation":"search","query":"nodejs jobs in Kolkata"},"confirmRequired":false,"summary":"Search for nodejs jobs in Kolkata"}.
 
+
+action = "git"
+{
+  "operation": "status" | "commit" | "log" | "branch" | "push" | "pull" | "diff" | "undo" | "safety" | "standup" | "pr" | "stash" | "stale",
+  "message": "only for commit — user's description or 'auto' for AI-generated",
+  "branch": "only for branch operations — the branch name",
+  "sub": "only for branch — 'create' | 'switch' | 'delete' | 'list'",
+  "count": "only for log — number of commits to show, default 10",
+  "days": "only for stale — days threshold, default 30"
+}
+Set confirmRequired: true for commit, push, undo, branch delete.
+Set confirmRequired: false for status, log, diff, pull, safety, standup, pr, stash, stale.
+
+Examples:
+
+User: "show git status"
+{"action":"git","params":{"operation":"status"},"confirmRequired":false,"summary":"Show git status"}
+
+User: "commit my changes with a good message"
+{"action":"git","params":{"operation":"commit","message":"auto"},"confirmRequired":true,"summary":"AI commit message and commit all changes"}
+
+User: "show last 5 commits"
+{"action":"git","params":{"operation":"log","count":"5"},"confirmRequired":false,"summary":"Show last 5 commits"}
+
+User: "create a branch called feature/auth"
+{"action":"git","params":{"operation":"branch","sub":"create","branch":"feature/auth"},"confirmRequired":true,"summary":"Create branch feature/auth"}
+
+User: "push my changes"
+{"action":"git","params":{"operation":"push"},"confirmRequired":true,"summary":"Push to remote"}
+
+User: "is it safe to push"
+{"action":"git","params":{"operation":"safety"},"confirmRequired":false,"summary":"Run safety check before pushing"}
+
+User: "generate my standup"
+{"action":"git","params":{"operation":"standup"},"confirmRequired":false,"summary":"Generate standup from recent commits"}
+
+User: "write a PR description"
+{"action":"git","params":{"operation":"pr"},"confirmRequired":false,"summary":"Write PR description from commits ahead of main"}
+
+User: "what's in my stashes"
+{"action":"git","params":{"operation":"stash"},"confirmRequired":false,"summary":"List and summarize all stashes"}
+
+User: "show stale branches older than 14 days"
+{"action":"git","params":{"operation":"stale","days":"14"},"confirmRequired":false,"summary":"Find branches not touched in 14 days"}
+
+User: "undo my last commit"
+{"action":"git","params":{"operation":"undo"},"confirmRequired":true,"summary":"Undo last commit keeping changes"}
+
 action = "unknown"
 {
   "reason": "why you could not parse this"
@@ -98,7 +146,7 @@ User: "delete node_modules folder"
 {"action":"shell","params":{"command":"rm -rf node_modules"},"confirmRequired":true,"summary":"Permanently delete node_modules folder"}`;
 
 export interface ParsedIntent {
-  action: "shell" | "email" | "file" | "web" | "unknown";
+  action: "shell" | "email" | "file" | "web" | "git" | "unknown";
   params: Record<string, string>;
   confirmRequired: boolean;
   summary: string;
