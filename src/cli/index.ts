@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import readline from "readline";
+import path from "path";
+import os from "os";
+import fs from "fs";
 import chalk from "chalk";
 import { parseIntent } from "../core/intentParser.js";
 import {
@@ -40,6 +43,7 @@ import {
   getSessionStats,
 } from "../memory/store.js";
 import { closeBrowser } from "../tentacles/web.js";
+import { config } from "../config/keys.js";
 
 // ── Confirmation gate
 async function confirm(rl: readline.Interface): Promise<boolean> {
@@ -59,6 +63,75 @@ function extractUrlFromInput(input: string): string | null {
 
 // ── Main loop
 async function main(): Promise<void> {
+  // First run — launch setup wizard automatically
+  if (config.isFirstRun || !config.groq.apiKey) {
+    console.clear();
+    console.log();
+    console.log(chalk.cyan.bold("  🐙 Welcome to Octopus!"));
+    console.log();
+    console.log(
+      chalk.gray("  Looks like this is your first time. Let's get you set up."),
+    );
+    console.log(
+      chalk.gray("  You'll need a free Groq API key from ") +
+        chalk.cyan("https://console.groq.com"),
+    );
+    console.log();
+
+    const { default: readline } = await import("readline");
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const askQuestion = (q: string): Promise<string> =>
+      new Promise((resolve) => {
+        process.stdout.write(chalk.cyan("  ❯ ") + chalk.white(q + " "));
+        rl.once("line", resolve);
+      });
+
+    const groqKey = await askQuestion("Paste your GROQ_API_KEY:");
+    const gmailUser = await askQuestion(
+      "Gmail address (or press Enter to skip):",
+    );
+    let gmailPass = "";
+    if (gmailUser.trim()) {
+      gmailPass = await askQuestion(
+        "Gmail App Password (or press Enter to skip):",
+      );
+    }
+
+    rl.close();
+
+    // Save to /.octopus/.env so it works from any directory
+    const octopusDir = path.join(os.homedir(), ".octopus");
+    if (!fs.existsSync(octopusDir))
+      fs.mkdirSync(octopusDir, { recursive: true });
+
+    const envContent = [
+      `GROQ_API_KEY=${groqKey.trim()}`,
+      `GROQ_MODEL=llama-3.3-70b-versatile`,
+      `GMAIL_USER=${gmailUser.trim()}`,
+      `GMAIL_APP_PASSWORD=${gmailPass.trim()}`,
+    ].join("\n");
+
+    fs.writeFileSync(path.join(octopusDir, ".env"), envContent);
+
+    // Also reload into process.env
+    process.env.GROQ_API_KEY = groqKey.trim();
+    process.env.GMAIL_USER = gmailUser.trim();
+    process.env.GMAIL_APP_PASSWORD = gmailPass.trim();
+
+    console.log();
+    console.log(chalk.green("  ✔  Config saved to ~/.octopus/.env"));
+    console.log(
+      chalk.gray(
+        "  This works from any directory — no need to copy .env files.",
+      ),
+    );
+    console.log();
+  }
+
   showBanner();
   const stats = getSessionStats();
   if (stats.totalMessages > 0) {
@@ -246,7 +319,8 @@ async function main(): Promise<void> {
 
       // Handle unknown
       if (intent.action === "unknown") {
-        const reason = intent.params["reason"] ?? "Could not understand command.";
+        const reason =
+          intent.params["reason"] ?? "Could not understand command.";
         const isGreeting = intent.params["isGreeting"] === "true";
 
         console.log();
@@ -256,9 +330,9 @@ async function main(): Promise<void> {
           console.log();
           console.log(
             chalk.gray("  ") +
-            chalk.gray("not a task — try: ") +
-            chalk.cyan("help") +
-            chalk.gray(" to see what I can do")
+              chalk.gray("not a task — try: ") +
+              chalk.cyan("help") +
+              chalk.gray(" to see what I can do"),
           );
         } else {
           // Unsupported task
