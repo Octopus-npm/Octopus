@@ -257,19 +257,18 @@ async function main(): Promise<void> {
 
       // Confirmation gate for risky actions
       if (intent.confirmRequired) {
+        stopSpinner();
         const approved = await confirm(rl);
         if (!approved) {
           showCancelled();
           ask();
           return;
         }
-        startSpinner("Starting...");
       }
 
-      // Route to tentacle
       try {
         const { execute } = await import("../core/router.js");
-        // startSpinner("Starting...");
+
         const executionLabels: Record<string, string> = {
           shell: "⚡ Running command...",
           file: "📁 Processing file...",
