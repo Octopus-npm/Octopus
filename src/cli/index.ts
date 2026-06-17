@@ -28,6 +28,10 @@ import {
   showPRDescription,
   showStashes,
   showStaleBranches,
+  showRepoStats,
+  showSyncStatus,
+  showContributors,
+  showRemoteBranches,
 } from "./display.js";
 import {
   addMessage,
@@ -173,18 +177,40 @@ async function main(): Promise<void> {
         console.log();
 
         console.log(
-          chalk.white("  🐼 Git     ") +
+          chalk.white("  🐼  Git     ") +
             chalk.gray("AI-powered git operations"),
         );
+        console.log();
+        console.log(chalk.gray("             local"));
         console.log(
           chalk.gray('             "commit my changes with a good message"'),
         );
         console.log(chalk.gray('             "show git status"'));
+        console.log(chalk.gray('             "show last 5 commits"'));
+        console.log(chalk.gray('             "what changed in my files"'));
+        console.log(chalk.gray('             "undo my last commit"'));
+        console.log(
+          chalk.gray('             "create a branch called feature/auth"'),
+        );
+        console.log(chalk.gray('             "what\'s in my stashes"'));
+        console.log(chalk.gray('             "show stale branches"'));
+        console.log();
+        console.log(chalk.gray("             remote"));
+        console.log(chalk.gray('             "push my changes"'));
+        console.log(chalk.gray('             "pull latest from remote"'));
+        console.log(chalk.gray('             "am I ahead or behind remote"'));
+        console.log(
+          chalk.gray('             "how many branches in remote repo"'),
+        );
+        console.log(chalk.gray('             "fetch latest from remote"'));
+        console.log(chalk.gray('             "what is the remote origin"'));
+        console.log();
+        console.log(chalk.gray("             ai powered"));
         console.log(chalk.gray('             "generate my standup"'));
         console.log(chalk.gray('             "write a PR description"'));
         console.log(chalk.gray('             "is it safe to push"'));
-        console.log(chalk.gray('             "show stale branches"'));
-        console.log(chalk.gray('             "what\'s in my stashes"'));
+        console.log(chalk.gray('             "who has committed the most"'));
+        console.log(chalk.gray('             "show repo stats"'));
         console.log();
         ask();
         return;
@@ -304,6 +330,14 @@ async function main(): Promise<void> {
                 daysAgo: number;
               }[],
             );
+          } else if (data?.type === "stats") {
+            showRepoStats(result.output);
+          } else if (data?.type === "sync") {
+            showSyncStatus(result.output);
+          } else if (data?.type === "contributors") {
+            showContributors(result.output);
+          } else if (data?.type === "remote-branches") {
+            showRemoteBranches(result.output);
           } else {
             if (result.output) showOutput(result.output);
             showSuccess(result.message);

@@ -20,7 +20,7 @@ Parse the user's natural language command and return ONLY a valid JSON object. N
 
 Return this exact schema:
 {
-  "action": "shell" | "email" | "file" | "web" | "unknown",
+  "action": "shell" | "email" | "file" | "web"| "git" | "unknown",
   "params": {},
   "confirmRequired": boolean,
   "summary": "one short sentence of what you will do"
@@ -78,7 +78,7 @@ User: "search for nodejs jobs in Kolkata"
 action = "git"
 IMPORTANT: Any question about "what changed", "what did I modify", "show changes", "what's different", "what files changed" must use action="git" with operation="diff". Never route these to shell.
 {
-  "operation": "status" | "commit" | "log" | "branch" | "push" | "pull" | "diff" | "undo" | "safety" | "standup" | "pr" | "stash" | "stale" | "remote",
+  "operation": "status" | "commit" | "log" | "branch" | "push" | "pull" | "diff" | "undo" | "safety" | "standup" | "pr" | "stash" | "stale" | "remote" | "remote-branches" | "sync" | "fetch" | "contributors" | "stats",
   "message": "only for commit — user's description or 'auto' for AI-generated",
   "branch": "only for branch operations — the branch name",
   "sub": "only for branch — 'create' | 'switch' | 'delete' | 'list'",
@@ -140,6 +140,27 @@ User: "give me the github link of this repo"
 
 User: "what is the remote url"
 {"action":"git","params":{"operation":"remote"},"confirmRequired":false,"summary":"Show remote URL"}
+
+User: "how many branches in remote repo"
+{"action":"git","params":{"operation":"remote-branches"},"confirmRequired":false,"summary":"List all remote branches"}
+
+User: "am I ahead or behind remote"
+{"action":"git","params":{"operation":"sync"},"confirmRequired":false,"summary":"Check sync status with remote"}
+
+User: "is my branch up to date"
+{"action":"git","params":{"operation":"sync"},"confirmRequired":false,"summary":"Check if branch is in sync with remote"}
+
+User: "fetch latest from remote"
+{"action":"git","params":{"operation":"fetch"},"confirmRequired":false,"summary":"Fetch from remote without merging"}
+
+User: "who has committed the most"
+{"action":"git","params":{"operation":"contributors"},"confirmRequired":false,"summary":"Show contributors by commit count"}
+
+User: "show repo stats"
+{"action":"git","params":{"operation":"stats"},"confirmRequired":false,"summary":"Show full repository statistics"}
+
+User: "give me an overview of this repo"
+{"action":"git","params":{"operation":"stats"},"confirmRequired":false,"summary":"Show repository overview and stats"}
 
 action = "unknown"
 {

@@ -633,6 +633,209 @@ async function gitRemote(onProgress: GitProgressCallback): Promise<GitResult> {
   }
 }
 
+// ── Remote branches Operations
+async function gitRemoteBranches(
+  onProgress: GitProgressCallback,
+): Promise<GitResult> {
+  onProgress("⎇  Fetching remote branches...");
+  const git = getGit();
+  try {
+    const result = await git.branch(["-r"]);
+    const branches = Object.keys(result.branches)
+      .filter((b) => !b.includes("HEAD"))
+      .map((b) => b.trim());
+
+    if (branches.length === 0) {
+      return {
+        success: true,
+        output: "No remote branches found.",
+        message: "No remote branches",
+      };
+    }
+
+    const formatted = branches.map((b) => `  ○  ${b}`).join("\n");
+    return {
+      success: true,
+      output: formatted,
+      message: `Found ${branches.length} remote branch(es)`,
+      data: { type: "remote-branches", branches },
+    };
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    return {
+      success: false,
+      output: "",
+      message: error.message ?? "remote branches failed",
+    };
+  }
+}
+
+// ── REMOTE SYNC STATUS
+async function gitRemoteSync(
+  onProgress: GitProgressCallback,
+): Promise<GitResult> {
+  const git = getGit();
+  try {
+    onProgress("⎇  Checking sync status...");
+    const status = await git.status();
+    const branch = status.current ?? "main";
+    const ahead = status.ahead;
+    const behind = status.behind;
+
+    const lines: string[] = [];
+    lines.push(`branch      ${branch}`);
+
+    if (ahead === 0 && behind === 0) {
+      lines.push(`ahead       0 commits`);
+      lines.push(`behind      0 commits`);
+      lines.push(`status      ✔ fully in sync with remote`);
+    } else if (ahead > 0 && behind === 0) {
+      lines.push(`ahead       ${ahead} commit(s) — you have unpushed changes`);
+      lines.push(`behind      0 commits`);
+      lines.push(`status      ↑ push needed`);
+    } else if (behind > 0 && ahead === 0) {
+      lines.push(`ahead       0 commits`);
+      lines.push(`behind      ${behind} commit(s) — remote has new changes`);
+      lines.push(`status      ↓ pull needed`);
+    } else {
+      lines.push(`ahead       ${ahead} commit(s)`);
+      lines.push(`behind      ${behind} commit(s)`);
+      lines.push(`status      ↕ diverged — pull then push`);
+    }
+
+    return {
+      success: true,
+      output: lines.join("\n"),
+      message: `Sync status for ${branch}`,
+      data: { type: "sync" },
+    };
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    return {
+      success: false,
+      output: "",
+      message: error.message ?? "sync check failed",
+    };
+  }
+}
+
+// ── FETCH
+async function gitFetch(onProgress: GitProgressCallback): Promise<GitResult> {
+  onProgress("⎇  Fetching from remote...");
+  const git = getGit();
+  try {
+    await git.fetch();
+    return {
+      success: true,
+      output: "",
+      message: "Fetched latest from remote",
+    };
+  } catch {
+    return {
+      success: false,
+      output: "",
+      message:
+        "Fetch failed — make sure you have network access and git credentials configured",
+    };
+  }
+}
+
+// ── CONTRIBUTORS
+async function gitContributors(
+  onProgress: GitProgressCallback,
+): Promise<GitResult> {
+  onProgress("⎇  Counting contributors...");
+  const git = getGit();
+  try {
+    const log = await git.log();
+    const counts: Record<string, number> = {};
+
+    log.all.forEach((c) => {
+      counts[c.author_name] = (counts[c.author_name] ?? 0) + 1;
+    });
+
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(
+        ([name, count], i) =>
+          `  ${String(i + 1).padStart(2, "0")}  ${name}  —  ${count} commit(s)`,
+      );
+
+    return {
+      success: true,
+      output: sorted.join("\n"),
+      message: `${sorted.length} contributor(s) found`,
+      data: { type: "contributors" },
+    };
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    return {
+      success: false,
+      output: "",
+      message: error.message ?? "contributors failed",
+    };
+  }
+}
+
+// ── REPO STATS
+async function gitStats(onProgress: GitProgressCallback): Promise<GitResult> {
+  onProgress("⎇  Gathering repo stats...");
+  const git = getGit();
+  try {
+    const log = await git.log();
+    const branches = await git.branchLocal();
+    const remoteBranches = await git.branch(["-r"]);
+    const remotes = await git.getRemotes(true);
+
+    const firstCommit = log.all[log.all.length - 1];
+    const latestCommit = log.all[0];
+
+    const contributors = new Set(log.all.map((c) => c.author_name)).size;
+
+    const firstDate = firstCommit
+      ? new Date(firstCommit.date).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "—";
+
+    const latestDate = latestCommit
+      ? new Date(latestCommit.date).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "—";
+
+    const remote = remotes[0]?.refs?.fetch ?? "no remote";
+
+    const lines = [
+      `remote          ${remote}`,
+      `total commits   ${log.all.length}`,
+      `local branches  ${branches.all.length}`,
+      `remote branches ${Object.keys(remoteBranches.branches).length}`,
+      `contributors    ${contributors}`,
+      `first commit    ${firstDate}`,
+      `latest commit   ${latestDate}  —  ${latestCommit?.message ?? ""}`,
+    ];
+
+    return {
+      success: true,
+      output: lines.join("\n"),
+      message: "Repo stats",
+      data: { type: "stats" },
+    };
+  } catch (err: unknown) {
+    const error = err as { message?: string };
+    return {
+      success: false,
+      output: "",
+      message: error.message ?? "stats failed",
+    };
+  }
+}
+
 // ── MAIN EXECUTOR
 export async function executeGit(
   params: Record<string, string>,
@@ -667,6 +870,16 @@ export async function executeGit(
       return gitStashList(onProgress);
     case "remote":
       return gitRemote(onProgress);
+    case "remote-branches":
+      return gitRemoteBranches(onProgress);
+    case "sync":
+      return gitRemoteSync(onProgress);
+    case "fetch":
+      return gitFetch(onProgress);
+    case "contributors":
+      return gitContributors(onProgress);
+    case "stats":
+      return gitStats(onProgress);
     case "stale":
       return gitStaleBranches(parseInt(days ?? "30"), onProgress);
     default:

@@ -416,3 +416,55 @@ export function showStaleBranches(
   }
   console.log();
 }
+
+export function showRepoStats(output: string): void {
+  console.log();
+  console.log(chalk.cyan("  ── repo stats ───────────────────────────────"));
+  output.split("\n").forEach((line) => {
+    const [key, ...rest] = line.split(/\s{2,}/);
+    console.log(
+      chalk.gray("  " + (key ?? "").padEnd(18)) + chalk.white(rest.join("  ")),
+    );
+  });
+  console.log();
+}
+
+export function showSyncStatus(output: string): void {
+  console.log();
+  console.log(chalk.cyan("  ── sync status ──────────────────────────────"));
+  output.split("\n").forEach((line) => {
+    const [key, ...rest] = line.split(/\s{2,}/);
+    const value = rest.join("  ");
+    const color = value.includes("✔")
+      ? chalk.green
+      : value.includes("↑")
+        ? chalk.yellow
+        : value.includes("↓")
+          ? chalk.yellow
+          : value.includes("↕")
+            ? chalk.red
+            : chalk.white;
+    console.log(chalk.gray("  " + (key ?? "").padEnd(12)) + color(value));
+  });
+  console.log();
+}
+
+export function showContributors(output: string): void {
+  console.log();
+  console.log(chalk.cyan("  ── contributors ─────────────────────────────"));
+  output.split("\n").forEach((line) => {
+    console.log(chalk.gray("  ") + chalk.white(line));
+  });
+  console.log();
+}
+
+export function showRemoteBranches(output: string): void {
+  console.log();
+  console.log(chalk.cyan("  ── remote branches ──────────────────────────"));
+  output.split("\n").forEach((line) => {
+    console.log(
+      chalk.cyan("  ○  ") + chalk.white(line.replace("  ○  ", "").trim()),
+    );
+  });
+  console.log();
+}
