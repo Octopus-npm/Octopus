@@ -246,11 +246,28 @@ async function main(): Promise<void> {
 
       // Handle unknown
       if (intent.action === "unknown") {
-        const reason =
-          intent.params["reason"] ?? "Could not understand command.";
-        showUnknown(reason);
+        const reason = intent.params["reason"] ?? "Could not understand command.";
+        const isGreeting = intent.params["isGreeting"] === "true";
+
+        console.log();
+        if (isGreeting) {
+          // Conversational response
+          console.log(chalk.white("  🐙  ") + chalk.white(reason));
+          console.log();
+          console.log(
+            chalk.gray("  ") +
+            chalk.gray("not a task — try: ") +
+            chalk.cyan("help") +
+            chalk.gray(" to see what I can do")
+          );
+        } else {
+          // Unsupported task
+          console.log(chalk.yellow("  ◆  ") + chalk.white(reason));
+        }
+        console.log();
+
         addMessage("user", trimmed, "unknown");
-        addMessage("assistant", `Could not execute: ${reason}`, "unknown");
+        addMessage("assistant", reason, "unknown");
         ask();
         return;
       }
