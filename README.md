@@ -23,6 +23,7 @@
 ---
 
 ## What is Octopus?
+thi is very cool
 
 Octopus is a terminal-based autonomous AI agent powered by **Groq + Llama 3.3 70B**. Tell it what you want in plain English and it executes real tasks — no setup wizards, no drag-and-drop, no configuration files.
 
