@@ -48,6 +48,7 @@ export async function classifyComplexity(
     /,\s*then\b/i,
     /\b(generate|create|write|check|search|scrape|commit|push|pull|run|fetch|read)\b.+\band\b.+\b(email|send|message|notify|save|write|commit|push)\b/i,
     /\b(check|show|tell me|get|fetch)\b.+\band\b.+\b(tell me|show|status|check)\b/i,
+    /\b(clean\s*up|fix|update|optimize|improve)\b.+\band\b/i,
   ];
 
   const hasObviousSignal = multiStepSignals.some((p) => p.test(userInput));

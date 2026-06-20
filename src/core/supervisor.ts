@@ -31,7 +31,13 @@ Available tentacles and their EXACT operations — do not invent operations not 
   - summarize → returns: AI summary text (chainable)
   - screenshot → returns: file path of saved image (not chainable as text)
   - search → returns: a FORMATTED LIST of multiple results with titles/links — NOT a single URL, cannot be chained directly into another web.url param
-- git: { operation: ..., message, branch, sub, count, days } → returns: varies, mostly human-readable summaries (chainable as text for email/file)
+- git: { operation: "status"|"commit"|"log"|"branch"|"push"|"pull"|"diff"|"undo"|"safety"|"standup"|"pr"|"stash"|"stale"|"remote"|"remote-branches"|"sync"|"fetch"|"contributors"|"stats", message, branch, sub, count, days } → returns: varies, mostly human-readable summaries (chainable as text for email/file)
+
+CRITICAL RULE — NO SHELL GUESSING: The "shell" tentacle only runs commands the user explicitly wants run, or well-known universal CLI commands (npm test, npm run build, etc). NEVER use shell to "guess" at a capability that doesn't exist — for example, do not invent a shell command for "deploy to vercel" unless the user explicitly says to run "vercel deploy". Do not invent a shell command as a substitute for "generate a standup" (use git's "standup" operation) or for "fix issues" (no such capability exists — use "unsupported"). If you are inventing a command name that isn't something a real person would type in a terminal verbatim, it belongs in "unsupported" instead.
+
+CRITICAL: "generate a standup", "create a standup", "daily standup", "what did I work on" should ALWAYS map to git tentacle operation "standup" — never shell, never "get today's date".
+
+CRITICAL: Before using "shell" for any git-related task, check if a git tentacle operation already does it: contributors counting → use git "contributors" operation, NOT shell. Standup/recent work → use git "standup". Repo overview → use git "stats". Only use shell for git operations that have no equivalent in the git tentacle's operation list.
 
 CRITICAL CHAINING RULE: Only chain {{step_N_output}} into a NEXT step's param if that step's output is genuinely a single usable piece of data (text content, a generated message, a summary). NEVER chain "search" results into a "scrape" or "screenshot" url param — search returns multiple results as formatted text, not one URL. If the user's request implies "search then visit/open/buy a result", that next action is NOT POSSIBLE with current tentacles — add it to "unsupported" instead of guessing.
 
@@ -57,6 +63,24 @@ Example — "search for nike shoes on flipkart and buy one":
     {"id": 1, "tentacle": "web", "operation": "search", "params": {"query": "nike jordan shoes flipkart"}, "description": "Search for Nike Jordan shoes"}
   ],
   "unsupported": ["Buying a product — Octopus has no checkout/payment tentacle", "Opening or scraping a specific result — search returns multiple results, not one page to act on"]
+}
+
+Example — "generate my standup and email it to my manager":
+{
+  "steps": [
+    {"id": 1, "tentacle": "git", "operation": "standup", "params": {}, "description": "Generate standup from recent commits"},
+    {"id": 2, "tentacle": "email", "operation": "send", "params": {"to": "", "subject": "Daily standup", "body": "{{step_1_output}}"}, "description": "Email the standup", "dependsOn": [1]}
+  ],
+  "unsupported": []
+}
+
+Example — "check who has committed the most and email me the count":
+{
+  "steps": [
+    {"id": 1, "tentacle": "git", "operation": "contributors", "params": {}, "description": "Get contributor commit counts"},
+    {"id": 2, "tentacle": "email", "operation": "send", "params": {"to": "", "subject": "Contributors", "body": "{{step_1_output}}"}, "description": "Email contributor counts", "dependsOn": [1]}
+  ],
+  "unsupported": []
 }`;
 
 export async function generatePlan(userInput: string): Promise<ExecutionPlan> {
@@ -120,14 +144,19 @@ function resolveParams(
   const resolved: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(params)) {
-    const match = value?.match?.(/^\{\{step_(\d+)_output\}\}$/);
-    if (match) {
-      const refId = parseInt(match[1]);
-      const refResult = stepResults.find((r) => r.stepId === refId);
-      resolved[key] = refResult?.output ?? "";
-    } else {
+    if (typeof value !== "string") {
       resolved[key] = value;
+      continue;
     }
+
+    resolved[key] = value.replace(
+      /\{\{step_(\d+)_output\}\}/g,
+      (_match, stepIdStr) => {
+        const refId = parseInt(stepIdStr);
+        const refResult = stepResults.find((r) => r.stepId === refId);
+        return refResult?.output ?? "";
+      },
+    );
   }
 
   return resolved;
