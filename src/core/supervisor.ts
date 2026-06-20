@@ -57,6 +57,14 @@ Return ONLY this JSON, nothing else:
   "unsupported": ["short description of any part of the request that has no matching tentacle operation or can't be chained"]
 }
 
+Example — "clean up my branches":
+{
+  "steps": [
+    {"id": 1, "tentacle": "git", "operation": "stale", "params": {"days": "30"}, "description": "Find branches inactive for 30+ days"}
+  ],
+  "unsupported": ["Automatically deleting branches — deciding which branches are safe to remove requires manual review, Octopus will only report stale branches, not delete them"]
+}
+
 Example — "search for nike shoes on flipkart and buy one":
 {
   "steps": [
