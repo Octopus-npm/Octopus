@@ -2,6 +2,13 @@ import chalk from "chalk";
 import ora, { Ora } from "ora";
 import os from "os";
 
+import {
+  PlanStep,
+  StepResult,
+  VerificationResult,
+  MissingField,
+} from "../core/planTypes.js";
+
 const OS_LABEL =
   os.platform() === "win32"
     ? "windows"
@@ -467,4 +474,173 @@ export function showRemoteBranches(output: string): void {
     );
   });
   console.log();
+}
+
+// ── Supervisor: plan preview
+export function showPlan(steps: PlanStep[]): void {
+  console.log();
+  console.log(chalk.cyan("  ── execution plan ──────────────────────────"));
+  steps.forEach((step, i) => {
+    const condition = step.condition ? chalk.gray(`  (${step.condition})`) : "";
+    console.log(
+      chalk.gray(`  ${i + 1}.  `) + chalk.white(step.description) + condition,
+    );
+  });
+  console.log();
+}
+
+// ── Supervisor: missing info prompt
+export function showMissingInfo(missingFields: MissingField[]): void {
+  console.log();
+  console.log(chalk.yellow("  ⚠  Missing info before I can run this:"));
+  missingFields.forEach((f) => {
+    console.log(chalk.gray("     •  ") + chalk.white(f.question));
+  });
+  console.log();
+  console.log(
+    chalk.gray("  Reply with the missing info, or rephrase your request."),
+  );
+  console.log();
+}
+
+// ── Supervisor: step progress (live, one per step)
+export function showStepStart(
+  step: PlanStep,
+  index: number,
+  total: number,
+): void {
+  console.log();
+  console.log(
+    chalk.cyan(`  [${index}/${total}]  `) + chalk.white(step.description),
+  );
+}
+
+export function showStepResult(
+  step: PlanStep,
+  result: StepResult,
+  verification: VerificationResult,
+): void {
+  if (verification.reason === "Dependency failed") {
+    console.log(
+      chalk.gray(`         ⊘  Skipped — `) +
+        chalk.gray(verification.reason.toLowerCase()),
+    );
+    return;
+  }
+
+  const failed = !result.success || !verification.passed;
+
+  if (failed) {
+    const reason = verification.reason || result.message;
+    if (reason.includes("Security issues found:")) {
+      console.log(chalk.red(`         ✖  Security check failed:`));
+      const issues = reason.replace("Security issues found: ", "").split("; ");
+      issues.forEach((issue) => {
+        console.log(chalk.red(`            •  `) + chalk.white(issue));
+      });
+    } else {
+      console.log(chalk.red(`         ✖  `) + chalk.white(reason));
+    }
+    return;
+  }
+
+  // Success — route to the same rich formatters the simple path uses
+  const data = result.data as
+    | { type?: string; [key: string]: unknown }
+    | undefined;
+  const indent = "         ";
+
+  if (data?.type === "status") {
+    console.log(chalk.green(`${indent}✔  `) + chalk.white(result.message));
+    showGitStatusIndented(result.output, indent);
+  } else if (data?.type === "log") {
+    console.log(chalk.green(`${indent}✔  `) + chalk.white(result.message));
+    (
+      data.commits as {
+        hash: string;
+        date: string;
+        message: string;
+        author: string;
+      }[]
+    ).forEach((c) => {
+      console.log(
+        chalk.gray(`${indent}   `) +
+          chalk.cyan(c.hash) +
+          chalk.gray("  ") +
+          chalk.white(c.message),
+      );
+    });
+  } else if (data?.type === "branches") {
+    console.log(chalk.green(`${indent}✔  `) + chalk.white(result.message));
+    (data.branches as string[]).forEach((b) => {
+      const marker = b.trim() === data.current ? "✦" : "○";
+      console.log(
+        chalk.gray(`${indent}   ${marker}  `) + chalk.white(b.trim()),
+      );
+    });
+  } else if (
+    data?.type === "remote-branches" ||
+    data?.type === "contributors" ||
+    data?.type === "stats" ||
+    data?.type === "sync"
+  ) {
+    console.log(chalk.green(`${indent}✔  `) + chalk.white(result.message));
+    result.output.split("\n").forEach((line) => {
+      console.log(chalk.gray(`${indent}   `) + chalk.white(line));
+    });
+  } else if (result.output) {
+    // Generic — show output indented, truncated if long
+    console.log(chalk.green(`${indent}✔  `) + chalk.white(result.message));
+    const lines = result.output.split("\n");
+    const preview = lines.slice(0, 6);
+    preview.forEach((line) => {
+      console.log(chalk.gray(`${indent}   `) + chalk.white(line));
+    });
+    if (lines.length > 6) {
+      console.log(
+        chalk.gray(`${indent}   ... (${lines.length - 6} more lines)`),
+      );
+    }
+  } else {
+    console.log(chalk.green(`${indent}✔  `) + chalk.white(result.message));
+  }
+}
+
+function showGitStatusIndented(output: string, indent: string): void {
+  output
+    .trimEnd()
+    .split("\n")
+    .forEach((line) => {
+      if (line.includes("modified")) {
+        console.log(chalk.yellow(`${indent}   ▲  `) + chalk.white(line.trim()));
+      } else if (line.includes("untracked")) {
+        console.log(chalk.gray(`${indent}   ?  `) + chalk.white(line.trim()));
+      } else if (line.includes("deleted")) {
+        console.log(chalk.red(`${indent}   ✖  `) + chalk.white(line.trim()));
+      } else if (line.trim()) {
+        console.log(chalk.gray(`${indent}   │  `) + chalk.white(line.trim()));
+      }
+    });
+}
+
+// ── Supervisor: final summary
+export function showSupervisorSummary(summary: string, success: boolean): void {
+  console.log();
+  console.log(chalk.cyan("  ── supervisor summary ──────────────────────"));
+  if (success) {
+    console.log(chalk.green("  ✔  ") + chalk.white(summary));
+  } else {
+    console.log(chalk.red("  ✖  ") + chalk.white(summary));
+  }
+  console.log();
+}
+
+// ── Supervisor: classification indicator (subtle, low-noise)
+export function showSupervisorMode(reasoning: string): void {
+  console.log();
+  console.log(
+    chalk.gray("  ⎇  ") +
+      chalk.gray("Multi-step task detected — ") +
+      chalk.gray(reasoning),
+  );
 }

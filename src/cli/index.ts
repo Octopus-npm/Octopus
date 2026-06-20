@@ -35,6 +35,12 @@ import {
   showSyncStatus,
   showContributors,
   showRemoteBranches,
+  showPlan,
+  showMissingInfo,
+  showStepStart,
+  showStepResult,
+  showSupervisorSummary,
+  showSupervisorMode,
 } from "./display.js";
 import {
   addMessage,
@@ -44,6 +50,14 @@ import {
 } from "../memory/store.js";
 import { closeBrowser } from "../tentacles/web.js";
 import { config } from "../config/keys.js";
+import { classifyComplexity } from "../core/classifier.js";
+import { executeSupervisorTask } from "../core/supervisor.js";
+import {
+  PendingPlan,
+  PlanStep,
+  StepResult,
+  VerificationResult,
+} from "../core/planTypes.js";
 
 // ── Confirmation gate
 async function confirm(rl: readline.Interface): Promise<boolean> {
@@ -60,6 +74,10 @@ function extractUrlFromInput(input: string): string | null {
   const match = input.match(/https?:\/\/[^\s]+/);
   return match ? match[0] : null;
 }
+
+// Holds a plan that's waiting on missing info from the user
+let pendingPlan: PendingPlan | null = null;
+const PENDING_PLAN_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 // ── Main loop
 async function main(): Promise<void> {
@@ -289,7 +307,146 @@ async function main(): Promise<void> {
         return;
       }
 
-      // Parse intent via Groq
+      // ── Resume a pending plan if one is waiting on missing info
+      if (pendingPlan) {
+        const isExpired =
+          Date.now() - pendingPlan.createdAt > PENDING_PLAN_TIMEOUT_MS;
+
+        if (isExpired) {
+          pendingPlan = null;
+          // fall through to normal handling below
+        } else {
+          // Try to fill in missing fields from this reply
+          const { validatePlan } = await import("../core/validator.js");
+          const updatedSteps = pendingPlan.plan.steps.map((step) => {
+            const stillMissing = pendingPlan!.missingFields.filter(
+              (f) => f.stepId === step.id,
+            );
+            if (stillMissing.length === 0) return step;
+
+            const updatedParams = { ...step.params };
+            // Simplest case: single missing field on a single-step gap -> apply the whole reply
+            if (stillMissing.length === 1) {
+              updatedParams[stillMissing[0].field] = trimmed;
+            }
+            return { ...step, params: updatedParams };
+          });
+
+          const revalidation = validatePlan(updatedSteps);
+
+          if (!revalidation.valid) {
+            // Still missing things - show what's left and keep waiting
+            pendingPlan = {
+              plan: { ...pendingPlan.plan, steps: updatedSteps },
+              missingFields: revalidation.missingFields,
+              createdAt: pendingPlan.createdAt,
+            };
+            showMissingInfo(revalidation.missingFields);
+            ask();
+            return;
+          }
+
+          // Resolved - run the completed plan
+          const resolvedPlan = { ...pendingPlan.plan, steps: updatedSteps };
+          pendingPlan = null;
+
+          showPlan(resolvedPlan.steps);
+          startSpinner("Starting...");
+
+          const { runSupervisor } = await import("../core/supervisor.js");
+          const result = await runSupervisor(
+            resolvedPlan,
+            (text) => updateSpinner(text),
+            (step, index, total) => {
+              stopSpinner();
+              showStepStart(step, index, total);
+            },
+            (step, stepResult, verification) => {
+              stopSpinner();
+              showStepResult(step, stepResult, verification);
+              startSpinner("Continuing...");
+            },
+          );
+          stopSpinner();
+
+          showSupervisorSummary(result.summary, result.success);
+          addMessage("user", trimmed, "supervisor");
+          addMessage("assistant", result.summary, "supervisor");
+          ask();
+          return;
+        }
+      }
+
+      // ── Complexity classification
+      const classification = await classifyComplexity(trimmed);
+
+      if (classification.complexity === "complex") {
+        showSupervisorMode(classification.reasoning);
+        startSpinner("⎇  Planning steps...");
+
+        const { generatePlan, validateExecutionPlan, runSupervisor } =
+          await import("../core/supervisor.js");
+        const plan = await generatePlan(trimmed);
+        stopSpinner();
+
+        if (plan.steps.length === 0) {
+          showError(
+            "Could not break this request into actionable steps. Try rephrasing.",
+          );
+          ask();
+          return;
+        }
+
+        showPlan(plan.steps);
+        if (plan.unsupported && plan.unsupported.length > 0) {
+          console.log(chalk.yellow("  ⚠  Couldn't include:"));
+          plan.unsupported.forEach((u) =>
+            console.log(chalk.gray("     •  ") + chalk.white(u)),
+          );
+          console.log();
+        }
+
+        const validation = validateExecutionPlan(plan);
+        if (!validation.valid) {
+          showMissingInfo(validation.missingFields);
+          pendingPlan = {
+            plan,
+            missingFields: validation.missingFields,
+            createdAt: Date.now(),
+          };
+          addMessage("user", trimmed, "supervisor");
+          addMessage(
+            "assistant",
+            "Waiting for missing info to proceed.",
+            "supervisor",
+          );
+          ask();
+          return;
+        }
+
+        startSpinner("Starting...");
+        const result = await runSupervisor(
+          plan,
+          (text) => updateSpinner(text),
+          (step, index, total) => {
+            stopSpinner();
+            showStepStart(step, index, total);
+          },
+          (step, stepResult, verification) => {
+            stopSpinner();
+            showStepResult(step, stepResult, verification);
+            startSpinner("Continuing...");
+          },
+        );
+        stopSpinner();
+
+        showSupervisorSummary(result.summary, result.success);
+        addMessage("user", trimmed, "supervisor");
+        addMessage("assistant", result.summary, "supervisor");
+        ask();
+        return;
+      }
+
       // Parse intent via Groq
       startSpinner("Thinking...");
       let intent;
