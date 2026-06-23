@@ -669,7 +669,7 @@
 
     <!-- HERO -->
     <section class="hero">
-      <div class="hero-eyebrow">terminal ai agent</div>
+      <div class="hero-eyebrow">terminal multi-agent system</div>
 
       <h1 class="hero-title">
         Your terminal.<br />
@@ -678,7 +678,7 @@
 
       <p class="hero-sub">
         Octopus understands <em>plain English</em> and executes real tasks —
-        emails, files, shell commands, web search. No GUI. No setup. Just your
+        emails, files, shell commands, git operations, web search. No GUI. No complex setup. Just your
         terminal.
       </p>
 
@@ -722,8 +722,9 @@
         <p class="section-label">capabilities</p>
         <h2 class="section-title">Five tentacles.<br />Infinite tasks.</h2>
         <p class="section-desc">
-          Each tentacle handles a category of real-world actions. Tell Octopus
-          what you want — it routes to the right one automatically.
+          Each tentacle is powered by a specialized AI agent.
+          Octopus plans tasks, selects the right agents,
+          and coordinates execution automatically.
         </p>
 
         <div class="tentacles-grid">
@@ -797,6 +798,22 @@
               <div class="example">am I ahead or behind remote</div>
             </div>
           </div>
+
+          <div class="tentacle-card">
+          <div class="tentacle-icon">🧠</div>
+          <div class="tentacle-name">multi-agent</div>
+
+          <p class="tentacle-desc">
+            Complex tasks are broken into smaller steps and delegated
+            across specialized agents automatically.
+          </p>
+
+          <div class="tentacle-examples">
+            <div class="example">research and summarize AI startups</div>
+            <div class="example">analyze repo and generate PR</div>
+            <div class="example">check the repo status and mail the manager about the status of teh project</div>
+          </div>
+        </div>
         </div>
       </div>
     </section>
@@ -867,6 +884,17 @@
               Writes commit messages from your diff, generates standups, checks for leaked secrets before push, and explains what changed in plain English.
             </p>
           </div>
+          <div class="why-card">
+          <div class="why-num">08</div>
+          <div class="why-title">
+            multi-agent orchestration
+          </div>
+          <p class="why-desc">
+            Planner, researcher, git, and execution agents collaborate
+            automatically to solve larger tasks that a single agent
+            cannot handle efficiently.
+          </p>
+        </div>
         </div>
       </div>
     </section>
@@ -890,6 +918,7 @@
               <th>AI Powered</th>
               <th>email actions</th>
               <th>web scraping</th>
+              <th>multi-agent</th>
               <th>any user</th>
             </tr>
           </thead>
@@ -901,6 +930,7 @@
               <td class="cross">✓</td>
               <td class="cross">✗</td>
               <td class="cross">✗</td>
+              <td class="cross">✗</td>
               <td class="check">✓</td>
             </tr>
             <tr>
@@ -910,6 +940,7 @@
               <td class="cross">✓</td>
               <td class="check">✓</td>
               <td class="check">✓</td>
+              <td class="cross">✗</td>
               <td class="check">✓</td>
             </tr>
             <tr>
@@ -919,6 +950,7 @@
               <td class="check">✓</td>
               <td class="cross">✗</td>
               <td class="cross">✗</td>
+              <td class="check">✓</td>
               <td class="cross">✗ devs only</td>
             </tr>
             <tr>
@@ -928,12 +960,14 @@
               <td class="check">✗</td>
               <td class="cross">✗</td>
               <td class="cross">✗</td>
+              <td class="cross">✗</td>
               <td class="cross">✗ devs only</td>
             </tr>
             <tr
               style="background: #00d9c006; border-top: 1px solid var(--cyan)"
             >
               <td style="color: var(--cyan); font-weight: 700">🐙 octopus</td>
+              <td class="check highlight">✓</td>
               <td class="check highlight">✓</td>
               <td class="check highlight">✓</td>
               <td class="check highlight">✓</td>
@@ -953,7 +987,8 @@
       </p>
       <h2 class="cta-title">One command.<br /><span>That's it.</span></h2>
       <p class="cta-sub">
-        No account. No dashboard. No signup. Just a terminal and a Groq API key.
+        A complete multi-agent AI system running directly
+        inside your terminal.No account. No dashboard.
       </p>
 
       <div>
@@ -1064,6 +1099,16 @@
             "  feat(auth): add JWT refresh token rotation",
             "  ✔  Committed: feat(auth): add JWT refresh token rotation",
           ],
+        },
+        {
+          prompt: "analyze my repository and generate release notes",
+          lines: [
+            "  🧠 Planner agent creating execution plan...",
+            "  🔍 Research agent analyzing commits...",
+            "  ⎇ Git agent reading repository history...",
+            "  📝 Writer agent generating release notes...",
+            "  ✔ Release notes generated successfully"
+          ]
         },
         {
           prompt: "generate my standup",
