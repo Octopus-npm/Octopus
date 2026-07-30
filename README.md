@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/Codewithpabitra/Octopus/main/assets/Octopus_logo.gif" width="160" alt="Octopus logo" />
 
-# Octopus
+# Octopus  
 
 **Terminal AI Agent — speak naturally, execute instantly.**
 

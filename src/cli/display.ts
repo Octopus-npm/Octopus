@@ -16,6 +16,52 @@ const OS_LABEL =
       ? "macos"
       : "linux";
 
+// ── Rotating suggestion ticker ────────────────────────────────────────────────
+
+const SUGGESTIONS = [
+  'Type "help" to see what Octopus can do',
+  'Type "clear memory" to wipe conversation history',
+  'Type "exit" or "bye" to quit',
+  'Speak naturally — "check status and email the diff to john@co.com"',
+  "Multi-step tasks are detected automatically — no special syntax needed",
+  'Try "search for latest AI news" to browse the web',
+  'Try "generate my standup and email it to my manager"',
+  'Try "is it safe to push" before deploying',
+  'Try "show git status" to see your repo state',
+  'Try "summarize https://any-url.com" to read pages faster',
+];
+
+let suggestionInterval: ReturnType<typeof setInterval> | null = null;
+let suggestionIndex = 0;
+
+export function startSuggestionTicker(): void {
+  if (suggestionInterval) return;
+
+  suggestionIndex = 0;
+
+  const renderSuggestion = () => {
+    const suggestion = SUGGESTIONS[suggestionIndex % SUGGESTIONS.length];
+    // Clear current line and rewrite suggestion
+    process.stdout.write("\r\x1b[K"); // carriage return + clear line
+    process.stdout.write(
+      chalk.gray("  💡 ") + chalk.gray(suggestion) + chalk.gray("  "),
+    );
+    suggestionIndex++;
+  };
+
+  renderSuggestion();
+  suggestionInterval = setInterval(renderSuggestion, 2000);
+}
+
+export function stopSuggestionTicker(): void {
+  if (suggestionInterval) {
+    clearInterval(suggestionInterval);
+    suggestionInterval = null;
+  }
+  // Clear the suggestion line completely
+  process.stdout.write("\r\x1b[K");
+}
+
 // ── Octopus ASCII banner
 
 export function showBanner(): void {
@@ -68,8 +114,7 @@ export function showBanner(): void {
   console.log(chalk.gray("  Memory     ") + chalk.white("last 10 messages"));
 
   console.log(
-    chalk.gray("  Supervisor ") +
-      chalk.white("auto-detects multi-step tasks")
+    chalk.gray("  Supervisor ") + chalk.white("auto-detects multi-step tasks"),
   );
 
   console.log();

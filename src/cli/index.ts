@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import readline from "readline";
+import readline, { emitKeypressEvents } from "readline";
 import path from "path";
 import os from "os";
 import fs from "fs";
@@ -41,6 +41,8 @@ import {
   showStepResult,
   showSupervisorSummary,
   showSupervisorMode,
+  startSuggestionTicker,
+  stopSuggestionTicker,
 } from "./display.js";
 import {
   addMessage,
@@ -81,6 +83,7 @@ const PENDING_PLAN_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 // ── Main loop
 async function main(): Promise<void> {
+  readline.emitKeypressEvents(process.stdin);
   // First run — launch setup wizard automatically
   if (config.isFirstRun || !config.groq.apiKey) {
     console.clear();
@@ -177,7 +180,21 @@ async function main(): Promise<void> {
   const ask = (): void => {
     showPrompt();
 
+    // Stop ticker on first keypress, not just on Enter
+    const stopOnKeypress = () => {
+      stopSuggestionTicker();
+      process.stdin.removeListener("keypress", stopOnKeypress);
+    };
+
+    setTimeout(() => {
+      startSuggestionTicker();
+      process.stdin.once("keypress", stopOnKeypress);
+    }, 800);
+
     rl.once("line", async (input) => {
+      stopSuggestionTicker();
+      process.stdin.removeListener("keypress", stopOnKeypress);
+
       const trimmed = input.trim();
 
       // Empty input
