@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import gradient from "gradient-string";
 import ora, { Ora } from "ora";
 import os from "os";
 
@@ -62,7 +63,7 @@ export function stopSuggestionTicker(): void {
   process.stdout.write("\r\x1b[K");
 }
 
-// ── Octopus ASCII banner
+// Octopus ASCII banner
 
 export function showBanner(): void {
   console.clear();
@@ -93,13 +94,13 @@ export function showBanner(): void {
   console.log();
 
   console.log(
-    chalk.gray("  Tentacles  ") +
-      chalk.cyan("⬡ shell  ") +
-      chalk.cyan("⬡ email  ") +
-      chalk.cyan("⬡ file  ") +
-      chalk.cyan("⬡ web  ") +
-      chalk.cyan("⬡ git  ") +
-      chalk.cyan("⬡ supervisor"),
+    chalk.gray(" Tentacles   ") +
+      chalk.cyan("⬢ shell  ") +
+      chalk.green("⬢ git  ") +
+      chalk.yellow("⬢ web  ") +
+      chalk.magenta("⬢ email  ") +
+      chalk.blue("⬢ file  ") +
+      chalk.red("⬢ supervisor"),
   );
 
   console.log(
@@ -144,8 +145,7 @@ export function showBanner(): void {
   console.log();
 }
 
-// ── Spinner
-
+// Spinner
 type SpinnerStyle =
   | "dots"
   | "dots2"
